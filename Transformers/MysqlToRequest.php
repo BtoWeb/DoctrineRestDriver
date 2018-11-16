@@ -18,18 +18,11 @@
 
 namespace Circle\DoctrineRestDriver\Transformers;
 
-use Circle\DoctrineRestDriver\Annotations\RoutingTable;
 use Circle\DoctrineRestDriver\Enums\HttpMethods;
 use Circle\DoctrineRestDriver\Factory\RequestFactory;
-use Circle\DoctrineRestDriver\Types\Annotation;
-use Circle\DoctrineRestDriver\Types\Id;
+use Circle\DoctrineRestDriver\Router\EntityRouterInterface;
 use Circle\DoctrineRestDriver\Types\Request;
 use Circle\DoctrineRestDriver\Types\SqlOperation;
-use Circle\DoctrineRestDriver\Types\SqlQuery;
-use Circle\DoctrineRestDriver\Types\Table;
-use Circle\DoctrineRestDriver\Types\Url;
-use Circle\DoctrineRestDriver\Validation\Assertions;
-use PHPSQLParser\PHPSQLParser;
 
 /**
  * Transforms a given sql query to a corresponding request
@@ -37,13 +30,8 @@ use PHPSQLParser\PHPSQLParser;
  * @author    Tobias Hauck <tobias@circle.ai>
  * @copyright 2015 TeeAge-Beatz UG
  */
-class MysqlToRequest {
-
-    /**
-     * @var PHPSQLParser
-     */
-    private $parser;
-
+class MysqlToRequest implements SqlToRequestInterface
+{
     /**
      * @var RequestFactory
      */
@@ -55,38 +43,41 @@ class MysqlToRequest {
     private $options;
 
     /**
-     * @var RoutingTable
+     * @var EntityRouterInterface
      */
-    private $routings;
+    private $router;
 
     /**
      * MysqlToRequest constructor
      *
-     * @param array        $options
-     * @param RoutingTable $routings
+     * @param array $options
+     * @param EntityRouterInterface $router
      */
-    public function __construct(array $options, RoutingTable $routings) {
-        $this->options        = $options;
-        $this->parser         = new PHPSQLParser();
+    public function __construct(array $options, EntityRouterInterface $router)
+    {
+        $this->options = $options;
         $this->requestFactory = new RequestFactory();
-        $this->routings       = $routings;
+        $this->router = $router;
     }
 
     /**
      * Transforms the given query into a request object
      *
      * @param  string $query
+     * @param array $tokens
      * @return Request
      *
+     * @throws \Circle\DoctrineRestDriver\Exceptions\InvalidSqlOperationException
+     * @throws \Circle\DoctrineRestDriver\Validation\Exceptions\InvalidTypeException
      * @SuppressWarnings("PHPMD.StaticAccess")
      */
-    public function transform($query) {
+    public function transform(string $query, array $tokens)
+    {
         $usePatch = isset($this->options['driverOptions']['use_patch']) ? $this->options['driverOptions']['use_patch'] : false;
-        
-        $tokens     = $this->parser->parse($query);
-        $method     = HttpMethods::ofSqlOperation(SqlOperation::create($tokens), $usePatch);
-        $annotation = Annotation::get($this->routings, Table::create($tokens), $method);
+        $method = HttpMethods::ofSqlOperation(SqlOperation::create($tokens), $usePatch);
 
-        return $this->requestFactory->createOne($method, $tokens, $this->options, $annotation);
+        $url = $this->router->getUrl( $tokens );
+
+        return $this->requestFactory->createOne($method, $tokens, $this->options, $url);
     }
 }

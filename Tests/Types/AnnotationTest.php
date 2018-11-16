@@ -18,7 +18,7 @@
 
 namespace Circle\DoctrineRestDriver\Tests\Types;
 
-use Circle\DoctrineRestDriver\Annotations\RoutingTable;
+use Circle\DoctrineRestDriver\Router\RoutingTable;
 use Circle\DoctrineRestDriver\Annotations\Select;
 use Circle\DoctrineRestDriver\Types\Annotation;
 use PHPSQLParser\PHPSQLParser;

@@ -19,7 +19,8 @@
 namespace Circle\DoctrineRestDriver\Types;
 
 use Circle\DoctrineRestDriver\Annotations\DataSource;
-use Circle\DoctrineRestDriver\Annotations\RoutingTable;
+use Circle\DoctrineRestDriver\Router\RoutingTable;
+use Circle\DoctrineRestDriver\Router\RoutingTableInterface;
 
 /**
  * Extracts id information from a sql token array
@@ -27,18 +28,22 @@ use Circle\DoctrineRestDriver\Annotations\RoutingTable;
  * @author    Tobias Hauck <tobias@circle.ai>
  * @copyright 2015 TeeAge-Beatz UG
  */
-class Annotation {
+class Annotation
+{
 
     /**
      * returns the corresponding data source annotation if exists
      *
-     * @param  RoutingTable $annotations
-     * @param  string       $entityAlias
-     * @param  string       $method
+     * @param  RoutingTableInterface $annotations
+     * @param  string $entityAlias
+     * @param  string $method
      * @return DataSource|null
      */
-    public static function get(RoutingTable $annotations, $entityAlias, $method) {
-        if (!self::exists($annotations, $entityAlias, $method)) return null;
+    public static function get(RoutingTableInterface $annotations, $entityAlias, $method)
+    {
+        if (!self::exists($annotations, $entityAlias, $method)) {
+            return null;
+        }
 
         return $annotations->get($entityAlias)->$method();
     }
@@ -46,12 +51,13 @@ class Annotation {
     /**
      * checks if the annotation exists
      *
-     * @param  RoutingTable $annotations
-     * @param  string       $entityAlias
-     * @param  string       $method
+     * @param  RoutingTableInterface $annotations
+     * @param  string $entityAlias
+     * @param  string $method
      * @return boolean
      */
-    public static function exists(RoutingTable $annotations = null, $entityAlias, $method) {
+    public static function exists(RoutingTableInterface $annotations, $entityAlias, $method)
+    {
         return !empty($annotations) && $annotations->get($entityAlias) !== null && $annotations->get($entityAlias)->$method() !== null;
     }
 }

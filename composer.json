@@ -1,11 +1,15 @@
 {
-  "name": "circle/doctrine-rest-driver",
-  "description": "Use a REST API as if it was your local database",
+  "name": "btoweb/doctrine-rest-driver",
+  "description": "Use a REST API as if it was your local database. Fork of circle/doctrine-rest-driver",
   "type": "library",
   "authors": [
     {
       "name": "Circle",
       "email": "hi@circle.ai"
+    },
+    {
+      "name": "BtoWeb",
+      "email": "aurelien.richaud@btoweb.fr"
     }
   ],
   "keywords": [
@@ -15,14 +19,14 @@
     "GPL"
   ],
   "require-dev": {
-    "symfony/expression-language": "^3.0",
-    "phpmd/phpmd" : "@stable",
-    "phpunit/phpunit" : "@stable",
-    "symfony/yaml": "3.*",
-    "sensio/framework-extra-bundle": "3.*",
-    "symfony/framework-bundle": "3.*",
-    "doctrine/doctrine-bundle": "^1.6",
-    "symfony/validator": "3.*"
+    "symfony/expression-language": "^4.0",
+    "phpmd/phpmd" : "^2.6.0",
+    "phpunit/phpunit" : "^7.4.3",
+    "symfony/yaml": "^4.1.7",
+    "sensio/framework-extra-bundle": "^5.2",
+    "symfony/framework-bundle": "^3.4",
+    "doctrine/doctrine-bundle": "^1.8",
+    "symfony/validator": "^3.4.0"
   },
   "autoload": {
     "psr-0": {
@@ -43,10 +47,15 @@
     }
   },
   "require": {
-    "php": ">=5.5",
-    "doctrine/dbal": "2.*",
-    "greenlion/php-sql-parser": "^4.0",
-    "doctrine/orm": "2.*",
-    "ci/restclientbundle": "^2.0.2"
+    "php": ">=7.1",
+    "doctrine/dbal": "^2.8.0",
+    "greenlion/php-sql-parser": "^4.1.2",
+    "doctrine/orm": "^2.6.2",
+    "ci/restclientbundle": "^2.0.2",
+    "symfony/security-csrf": "^4.1",
+    "symfony/form": "^4.1",
+    "symfony/asset": "^4.1",
+    "ext-pdo": "*",
+    "ext-json": "*"
   }
 }

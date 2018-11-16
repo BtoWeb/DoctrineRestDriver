@@ -39,7 +39,7 @@ Additionally you can add CURL-specific options:
 ```yml
 doctrine:
   dbal:
-    driver_class: "Circle\\DoctrineRestDriver\\Driver"
+    driver_class: Circle\DoctrineRestDriver\Driver
     host:         "%default_api_url%"
     port:         "%default_api_port%"
     user:         "%default_api_username%"
@@ -49,6 +49,13 @@ doctrine:
       authenticator_class:            "HttpAuthentication"
       CURLOPT_CURLOPT_FOLLOWLOCATION: true
       CURLOPT_HEADER:                 true
+      
+services:
+  rest.orm.entity_manager:
+    public: false
+    class: Circle\DoctrineRestDriver\Decorator\RestEntityManager
+    decorates: "doctrine.orm.entity_manager"
+    arguments: ["@rest.orm.entity_manager.inner"]
 ```
 
 A full list of all possible options can be found here: http://php.net/manual/en/function.curl-setopt.php

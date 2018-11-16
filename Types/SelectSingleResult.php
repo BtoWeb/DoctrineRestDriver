@@ -18,6 +18,8 @@
 
 namespace Circle\DoctrineRestDriver\Types;
 
+use function Clue\StreamFilter\fun;
+
 /**
  * Maps the response content of a GET query to a valid
  * Doctrine result for SELECT ... WHERE id = <id>
@@ -30,21 +32,31 @@ class SelectSingleResult {
     /**
      * Returns a valid Doctrine result for SELECT ... WHERE id = <id>
      *
-     * @param  array  $tokens
-     * @param  array  $content
-     * @return string
+     * @param  array $tokens
+     * @param  array $content
+     * @return array
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
+     * @throws \Circle\DoctrineRestDriver\Validation\Exceptions\InvalidTypeException
      */
     public static function create(array $tokens, $content) {
         HashMap::assert($tokens, 'tokens');
         $tableAlias = Table::alias($tokens);
 
+        $usableTokens = array_filter($tokens['SELECT'], function($token) {
+            return ($token['expr_type'] ?? 'reserved') !== 'reserved';
+        });
+
         $attributeValueMap = array_map(function($token) use ($content, $tableAlias) {
             $key   = empty($token['alias']['name']) ? $token['base_expr'] : $token['alias']['name'];
-            $value = $content[str_replace($tableAlias . '.', '', $token['base_expr'])];
+
+            if ( $token['expr_type'] === 'aggregate_function' ) {
+                $value = $content[$key];
+            } else {
+                $value = $content[str_replace($tableAlias . '.', '', $token['base_expr'])] ?? null;
+            }
             return [$key => $value];
-        }, $tokens['SELECT']);
+        }, $usableTokens);
 
         return [ array_reduce($attributeValueMap, 'array_merge', []) ];
     }

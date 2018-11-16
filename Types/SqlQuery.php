@@ -60,7 +60,6 @@ class SqlQuery {
     public static function getStringRepresentation($param)
     {
         if (is_int($param) || is_float($param)) return $param;
-        if (is_numeric($param))                 return (float)$param;
         if (is_string($param))                  return '\'' . $param . '\'';
         if ($param === true)                    return 'true';
         if ($param === false)                   return 'false';

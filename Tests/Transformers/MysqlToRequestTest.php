@@ -18,7 +18,7 @@
 
 namespace Circle\DoctrineRestDriver\Tests\Transformers;
 
-use Circle\DoctrineRestDriver\Annotations\RoutingTable;
+use Circle\DoctrineRestDriver\Router\RoutingTable;
 use Circle\DoctrineRestDriver\Transformers\MysqlToRequest;
 use Circle\DoctrineRestDriver\Types\CurlOptions;
 use Circle\DoctrineRestDriver\Types\Request;
@@ -62,7 +62,7 @@ class MysqlToRequestTest extends \PHPUnit\Framework\TestCase {
      * {@inheritdoc}
      */
     public function setUp() {
-        $this->routings = $this->getMockBuilder('Circle\DoctrineRestDriver\Annotations\RoutingTable')->disableOriginalConstructor()->getMock();
+        $this->routings = $this->getMockBuilder('Circle\DoctrineRestDriver\Router\RoutingTable')->disableOriginalConstructor()->getMock();
         $this->routings
             ->expects($this->any())
             ->method('get')

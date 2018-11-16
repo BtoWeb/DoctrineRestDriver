@@ -18,17 +18,22 @@
 
 namespace Circle\DoctrineRestDriver;
 
-use Circle\DoctrineRestDriver\Annotations\RoutingTable;
+use Circle\DoctrineRestDriver\Router\EntityRouterInterface;
+use Circle\DoctrineRestDriver\Router\RoutingTable;
 use Circle\DoctrineRestDriver\Exceptions\DoctrineRestDriverException;
 use Circle\DoctrineRestDriver\Exceptions\Exceptions;
+use Circle\DoctrineRestDriver\Exceptions\MethodNotImplementedException;
 use Circle\DoctrineRestDriver\Exceptions\RequestFailedException;
+use Circle\DoctrineRestDriver\Exceptions\UnsupportedFetchModeException;
 use Circle\DoctrineRestDriver\Security\AuthStrategy;
 use Circle\DoctrineRestDriver\Transformers\MysqlToRequest;
 use Circle\DoctrineRestDriver\Types\Authentication;
 use Circle\DoctrineRestDriver\Types\Result;
 use Circle\DoctrineRestDriver\Types\SqlQuery;
 use Circle\DoctrineRestDriver\Validation\Assertions;
+use Doctrine\Common\Persistence\Mapping\ClassMetadataFactory;
 use Doctrine\DBAL\Driver\Statement as StatementInterface;
+use PHPSQLParser\PHPSQLParser;
 
 /**
  * Executes the statement - sends requests to an api
@@ -38,7 +43,8 @@ use Doctrine\DBAL\Driver\Statement as StatementInterface;
  *
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
-class Statement implements \IteratorAggregate, StatementInterface {
+class Statement implements \IteratorAggregate, StatementInterface
+{
 
     /**
      * @var string
@@ -91,9 +97,9 @@ class Statement implements \IteratorAggregate, StatementInterface {
     private $authStrategy;
 
     /**
-     * @var RoutingTable
+     * @var EntityRouterInterface
      */
-    private $routings;
+    private $router;
 
     /**
      * @var array
@@ -101,30 +107,45 @@ class Statement implements \IteratorAggregate, StatementInterface {
     private $options;
 
     /**
+     * @var ClassMetadataFactory
+     */
+    private $metadataFactory;
+
+    /**
+     * @var PHPSQLParser
+     */
+    protected $parser;
+
+    /**
      * Statement constructor
      *
-     * @param  string       $query
-     * @param  array        $options
-     * @param  RoutingTable $routings
-     * @throws \Exception
-     *
+     * @param  string $query
+     * @param  array $options
+     * @param  EntityRouterInterface $router
+     * @param ClassMetadataFactory $metadataFactory
+     * @throws Validation\Exceptions\NotNilException
      * @SuppressWarnings("PHPMD.StaticAccess")
      */
-    public function __construct($query, array $options, RoutingTable $routings) {
-        $this->query          = SqlQuery::quoteUrl($query);
-        $this->routings       = $routings;
-        $this->mysqlToRequest = new MysqlToRequest($options, $this->routings);
-        $this->restClient     = new RestClient();
+    public function __construct($query, array $options, EntityRouterInterface $router, ClassMetadataFactory $metadataFactory)
+    {
+        $this->query = SqlQuery::quoteUrl($query);
+        $this->metadataFactory = $metadataFactory;
+        $this->router = $router;
+        $this->parser = new PHPSQLParser();
+        $this->mysqlToRequest = new MysqlToRequest($options, $this->router);
+        $this->restClient = new RestClient();
 
         $this->authStrategy = Authentication::create($options);
-        $this->options      = $options;
+        $this->options = $options;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function bindValue($param, $value, $type = null) {
+    public function bindValue($param, $value, $type = null)
+    {
         $this->params[$param] = $value;
+
         return true;
     }
 
@@ -133,42 +154,51 @@ class Statement implements \IteratorAggregate, StatementInterface {
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
      */
-    public function bindParam($column, &$variable, $type = null, $length = null) {
-        return Exceptions::MethodNotImplementedException(get_class($this), 'bindParam');
+    public function bindParam($column, &$variable, $type = null, $length = null)
+    {
+        Exceptions::MethodNotImplementedException(get_class($this), 'bindParam');
     }
 
     /**
      * {@inheritdoc}
      */
-    public function errorCode() {
+    public function errorCode()
+    {
         return $this->errorCode;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function errorInfo() {
+    public function errorInfo()
+    {
         return $this->errorMessage;
     }
 
     /**
      * {@inheritdoc}
-     * @throws RequestFailedException
-     *
+     * @param null $params
+     * @return bool
+     * @throws DoctrineRestDriverException
+     * @throws Exceptions\InvalidSqlOperationException
+     * @throws Validation\Exceptions\NotNilException
      * @SuppressWarnings("PHPMD.StaticAccess")
      */
-    public function execute($params = null) {
-        $query   = SqlQuery::setParams($this->query, $params !== null ? $params : $this->params);
-        $request = $this->authStrategy->transformRequest($this->mysqlToRequest->transform($query));
+    public function execute($params = null)
+    {
+        $query = SqlQuery::setParams($this->query, $params ?? $this->params);
+
+        $tokens = $this->parser->parse($query);
+        $request = $this->authStrategy->transformRequest($this->mysqlToRequest->transform($query, $tokens));
 
         try {
-            $response     = $this->restClient->send($request);
-            $result       = new Result($query, $request->getMethod(), $response, $this->options);
+            $response = $this->restClient->send($request);
+            $result = new Result($query, $request->getMethod(), $response, $this->options);
             $this->result = $result->get();
-            $this->id     = $result->id();
+            $this->id = $result->id();
 
             return true;
-        } catch(RequestFailedException $e) {
+        } catch (RequestFailedException $e) {
             // as the error handling proposed by doctrine
             // does not work, we use the way of PDO_mysql
             // which just throws the possible errors
@@ -179,28 +209,32 @@ class Statement implements \IteratorAggregate, StatementInterface {
     /**
      * {@inheritdoc}
      */
-    public function rowCount() {
+    public function rowCount()
+    {
         return count($this->result);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function closeCursor() {
+    public function closeCursor()
+    {
         return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function columnCount() {
+    public function columnCount()
+    {
         return empty($this->result) ? 0 : count($this->result[0]);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function setFetchMode($fetchMode, $arg2 = null, $arg3 = null) {
+    public function setFetchMode($fetchMode, $arg2 = null, $arg3 = null)
+    {
         $this->fetchMode = $fetchMode;
 
         return true;
@@ -210,8 +244,10 @@ class Statement implements \IteratorAggregate, StatementInterface {
      * {@inheritdoc}
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
+     * @throws UnsupportedFetchModeException
      */
-    public function fetch($fetchMode = NULL, $cursorOrientation = \PDO::FETCH_ORI_NEXT, $cursorOffset = 0) {
+    public function fetch($fetchMode = null, $cursorOrientation = \PDO::FETCH_ORI_NEXT, $cursorOffset = 0)
+    {
         $fetchMode = empty($fetchMode) ? $this->fetchMode : $fetchMode;
         Assertions::assertSupportedFetchMode($fetchMode);
 
@@ -220,12 +256,16 @@ class Statement implements \IteratorAggregate, StatementInterface {
 
     /**
      * {@inheritdoc}
+     * @throws UnsupportedFetchModeException
      */
-    public function fetchAll($fetchMode = NULL, $fetchArgument = NULL, $ctorArgs = NULL) {
-        $result    = [];
+    public function fetchAll($fetchMode = null, $fetchArgument = null, $ctorArgs = null)
+    {
+        $result = [];
         $fetchMode = empty($fetchMode) ? $this->fetchMode : $fetchMode;
 
-        while (($row = $this->fetch($fetchMode))) array_push($result, $row);
+        while (($row = $this->fetch($fetchMode))) {
+            array_push($result, $row);
+        }
 
         return $result;
     }
@@ -234,15 +274,18 @@ class Statement implements \IteratorAggregate, StatementInterface {
      * {@inheritdoc}
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
+     * @throws MethodNotImplementedException
      */
-    public function fetchColumn($columnIndex = 0) {
-        return Exceptions::MethodNotImplementedException(get_class($this), 'fetchColumn');
+    public function fetchColumn($columnIndex = 0)
+    {
+        Exceptions::MethodNotImplementedException(get_class($this), 'fetchColumn');
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getIterator() {
+    public function getIterator()
+    {
         return $this->query;
     }
 
@@ -251,7 +294,8 @@ class Statement implements \IteratorAggregate, StatementInterface {
      *
      * @return int
      */
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 }

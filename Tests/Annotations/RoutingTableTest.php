@@ -19,7 +19,7 @@
 namespace Circle\DoctrineRestDriver\Tests\Annotations;
 
 use Circle\DoctrineRestDriver\Annotations\Routing;
-use Circle\DoctrineRestDriver\Annotations\RoutingTable;
+use Circle\DoctrineRestDriver\Router\RoutingTable;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 
 /**
@@ -28,7 +28,7 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
  * @author    Tobias Hauck <tobias@circle.ai>
  * @copyright 2015 TeeAge-Beatz UG
  *
- * @coversDefaultClass Circle\DoctrineRestDriver\Annotations\RoutingTable
+ * @coversDefaultClass Circle\DoctrineRestDriver\Router\RoutingTable
  */
 class RoutingTableTest extends \PHPUnit\Framework\TestCase {
 

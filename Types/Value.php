@@ -27,7 +27,8 @@ use Circle\DoctrineRestDriver\Validation\Exceptions\InvalidTypeException;
  * @author    Tobias Hauck <tobias@circle.ai>
  * @copyright 2015 TeeAge-Beatz UG
  */
-class Value {
+class Value
+{
 
     /**
      * Infers the type of a given string
@@ -38,17 +39,30 @@ class Value {
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
      */
-    public static function create($value) {
+    public static function create($value)
+    {
         Str::assert($value, 'value');
 
-        if($value === 'true')  return true;
-        if($value === 'false') return false;
-        if($value === 'null')  return null;
+        if ($value === 'true') return true;
+        if ($value === 'false') return false;
+        if ($value === 'null') return null;
 
-        $unquoted = preg_replace('/\"|\\\'|\`$/', '', preg_replace('/^\"|\\\'|\`/', '', $value));
-        if (!is_numeric($unquoted))                   return $unquoted;
-        if ((string) intval($unquoted) === $unquoted) return intval($unquoted);
+        $unquoted = preg_replace('#^\'(.*?)\'$#', '', preg_replace('/^\"|\\\'|\`/', '', $value));
 
-        return floatval($unquoted);
+        if ($unquoted != $value) {
+            // TODO : A améliorer (json des champs au format JSON)
+            if ( (
+                    (substr($unquoted, 0, 1) == '{' && substr($unquoted, -1) == '}')
+                    || (substr($unquoted, 0, 1) == '[' && substr($unquoted, -1) == ']')
+                ) && json_decode($unquoted) ) {
+                return json_decode($unquoted);
+            }
+
+            return $unquoted;
+        } elseif ((string)intval($unquoted) === $unquoted) {
+            return intval($unquoted);
+        } else {
+            return floatval($unquoted);
+        }
     }
 }

@@ -39,22 +39,23 @@ class RequestFactory {
     /**
      * Creates a new Request with the given options
      *
-     * @param  string     $method
-     * @param  array      $tokens
-     * @param  array      $options
-     * @param  DataSource $annotation
+     * @param  string $method
+     * @param  array $tokens
+     * @param  array $options
+     * @param  string $url
      * @return Request
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
+     * @throws \Circle\DoctrineRestDriver\Validation\Exceptions\InvalidTypeException
      */
-    public function createOne($method, array $tokens, array $options, DataSource $annotation = null) {
+    public function createOne($method, array $tokens, array $options, string $url) {
         return new Request([
-            'method'              => HttpMethod::create($method, $annotation),
-            'url'                 => Url::createFromTokens($tokens, $options['host'], $annotation),
+            'method'              => HttpMethod::create($method, null),
+            'url'                 => $url,
             'curlOptions'         => CurlOptions::create(array_merge($options['driverOptions'], HttpHeader::create($options['driverOptions'], $tokens))),
             'query'               => HttpQuery::create($tokens, $options['driverOptions']),
             'payload'             => Payload::create($tokens, $options),
-            'expectedStatusCodes' => StatusCode::create($method, $annotation)
+            'expectedStatusCodes' => StatusCode::create($method, null)
         ]);
     }
 }

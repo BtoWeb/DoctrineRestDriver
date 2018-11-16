@@ -39,6 +39,7 @@ class HttpQuery {
      * @return string|null
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
+     * @throws \Circle\DoctrineRestDriver\Validation\Exceptions\InvalidTypeException
      */
     public static function create(array $tokens, array $options = []) {
         HashMap::assert($tokens, 'tokens');

@@ -68,6 +68,12 @@ class Url {
      */
     public static function createFromTokens(array $tokens, $apiUrl, DataSource $annotation = null) {
         $id    = Identifier::create($tokens);
+        if ( $id && count(explode(',', $id)) > 1 ) {
+            $id = '';
+        } else {
+            $id = preg_replace('/\"|\\\'|\`$/', '', preg_replace('/^\"|\\\'|\`/', '', $id));
+        }
+
         $route = empty($annotation) || $annotation->getRoute() === null ? Table::create($tokens) : $annotation->getRoute();
 
         return self::create($route, $apiUrl, $id);

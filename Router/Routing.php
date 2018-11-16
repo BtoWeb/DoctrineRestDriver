@@ -16,7 +16,14 @@
  * along with DoctrineRestDriver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace Circle\DoctrineRestDriver\Annotations;
+namespace Circle\DoctrineRestDriver\Router;
+
+use Circle\DoctrineRestDriver\Annotations\Delete;
+use Circle\DoctrineRestDriver\Annotations\Fetch;
+use Circle\DoctrineRestDriver\Annotations\Insert;
+use Circle\DoctrineRestDriver\Annotations\Reader;
+use Circle\DoctrineRestDriver\Annotations\Select;
+use Circle\DoctrineRestDriver\Annotations\Update;
 
 /**
  * Contains routing information about a specific entity
@@ -72,6 +79,7 @@ class Routing {
      * Routing constructor
      *
      * @param string $namespace
+     * @throws \ReflectionException
      */
     public function __construct($namespace) {
         $reader = new Reader();

@@ -18,8 +18,9 @@
 
 namespace Circle\DoctrineRestDriver;
 
-use Circle\DoctrineRestDriver\Annotations\RoutingTable;
+use Circle\DoctrineRestDriver\Router\EntityRouterInterface;
 use Doctrine\Common\EventManager;
+use Doctrine\Common\Persistence\Mapping\ClassMetadataFactory;
 use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\Connection as AbstractConnection;
 
@@ -29,7 +30,8 @@ use Doctrine\DBAL\Connection as AbstractConnection;
  * @author    Tobias Hauck <tobias@circle.ai>
  * @copyright 2015 TeeAge-Beatz UG
  */
-class Connection extends AbstractConnection {
+class Connection extends AbstractConnection
+{
 
     /**
      * @var Statement
@@ -37,19 +39,28 @@ class Connection extends AbstractConnection {
     private $statement;
 
     /**
-     * @var array
+     * @var EntityRouterInterface
      */
-    private $routings;
+    private $router;
+
+    /**
+     * @var ClassMetadataFactory
+     */
+    private $metadataFactory;
 
     /**
      * Connection constructor
      *
-     * @param array        $params
-     * @param Driver       $driver
-     * @param RoutingTable $routings
+     * @param array $params
+     * @param Driver $driver
+     * @param EntityRouterInterface $router
+     * @param Configuration|null $config
+     * @param EventManager|null $eventManager
+     * @throws \Doctrine\DBAL\DBALException
      */
-    public function __construct(array $params, Driver $driver, RoutingTable $routings, Configuration $config = null, EventManager $eventManager = null) {
-        $this->routings = $routings;
+    public function __construct(array $params, Driver $driver, EntityRouterInterface $router = null, Configuration $config = null, EventManager $eventManager = null)
+    {
+        $this->router = $router;
         parent::__construct($params, $driver, $config, $eventManager);
     }
 
@@ -58,11 +69,13 @@ class Connection extends AbstractConnection {
      *
      * @param  string $statement
      * @return Statement
+     * @throws \Exception
      */
-    public function prepare($statement) {
+    public function prepare($statement)
+    {
         $this->connect();
 
-        $this->statement = new Statement($statement, $this->getParams(), $this->routings);
+        $this->statement = new Statement($statement, $this->getParams(), $this->router, $this->metadataFactory);
         $this->statement->setFetchMode($this->defaultFetchMode);
 
         return $this->statement;
@@ -76,7 +89,8 @@ class Connection extends AbstractConnection {
      *
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
-    public function lastInsertId($seqName = null) {
+    public function lastInsertId($seqName = null)
+    {
         return $this->statement->getId();
     }
 
@@ -84,11 +98,35 @@ class Connection extends AbstractConnection {
      * Executes a query, returns a statement
      *
      * @return Statement
+     * @throws \Exception
      */
-    public function query() {
+    public function query()
+    {
         $statement = $this->prepare(func_get_args()[0]);
         $statement->execute();
 
         return $statement;
+    }
+
+    /**
+     * @param EntityRouterInterface $router
+     * @return Connection
+     */
+    public function setEntityRouter(EntityRouterInterface $router): Connection
+    {
+        $this->router = $router;
+
+        return $this;
+    }
+
+    /**
+     * @param ClassMetadataFactory $metadataFactory
+     * @return Connection
+     */
+    public function setMetadataFactory(ClassMetadataFactory $metadataFactory): Connection
+    {
+        $this->metadataFactory = $metadataFactory;
+
+        return $this;
     }
 }

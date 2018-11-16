@@ -18,7 +18,11 @@
 
 namespace Circle\DoctrineRestDriver;
 
-use Circle\DoctrineRestDriver\Annotations\RoutingTable;
+use Circle\DoctrineRestDriver\Router\DefaultEntityRouter;
+use Circle\DoctrineRestDriver\Router\EntityRouterInterface;
+use Circle\DoctrineRestDriver\Router\RoutingTable;
+use Circle\DoctrineRestDriver\Router\RoutingTableInterface;
+use Doctrine\Common\Persistence\Mapping\ClassMetadataFactory;
 use Doctrine\DBAL\Driver as DriverInterface;
 use Doctrine\DBAL\Connection as AbstractConnection;
 use Doctrine\DBAL\Platforms\MySqlPlatform;
@@ -38,15 +42,42 @@ class Driver implements DriverInterface {
     private $connection;
 
     /**
+     * @var RoutingTableInterface
+     */
+    private $routings;
+
+    /**
+     * @var ClassMetadataFactory
+     */
+    private $metadataFactory;
+
+    /**
+     * @var EntityRouterInterface
+     */
+    protected $router;
+
+    /**
      * {@inheritdoc}
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
+     * @throws \Doctrine\DBAL\DBALException
+     * @throws Validation\Exceptions\InvalidTypeException
      */
     public function connect(array $params, $username = null, $password = null, array $driverOptions = array()) {
         if (!empty($this->connection)) return $this->connection;
 
-        $metaData         = new MetaData();
-        $this->connection = new Connection($params, $this, new RoutingTable($metaData->getEntityNamespaces()));
+        $this->connection = new Connection($params, $this, $this->router);
+        $this->connection->setMetadataFactory( $this->metadataFactory );
+
+        if ( $this->router ) {
+            $this->connection->setEntityRouter($this->router);
+        } else {
+            // Cas par défaut pour retro-compatibilité
+            $metaData         = new MetaData();
+            $routingTable     = new RoutingTable($metaData->getEntityNamespaces());
+            $this->connection->setEntityRouter( new DefaultEntityRouter($routingTable, $driverOptions) );
+        }
+
         return $this->connection;
     }
 
@@ -76,5 +107,19 @@ class Driver implements DriverInterface {
      */
     public function getDatabase(AbstractConnection $conn) {
         return 'rest_database';
+    }
+
+    public function setEntityRouter(EntityRouterInterface $router) {
+        $this->router = $router;
+    }
+
+    /**
+     * @param ClassMetadataFactory $metadataFactory
+     * @return Driver
+     */
+    public function setMetadataFactory(ClassMetadataFactory $metadataFactory): Driver
+    {
+        $this->metadataFactory = $metadataFactory;
+        return $this;
     }
 }

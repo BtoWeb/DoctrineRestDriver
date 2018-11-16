@@ -39,7 +39,7 @@ class StatementTest extends \PHPUnit\Framework\TestCase {
      * {@inheritdoc}
      */
     public function setUp() {
-        $routings = $this->getMockBuilder('Circle\DoctrineRestDriver\Annotations\RoutingTable')->disableOriginalConstructor()->getMock();
+        $routings = $this->getMockBuilder('Circle\DoctrineRestDriver\Router\RoutingTable')->disableOriginalConstructor()->getMock();
         $routings
             ->expects($this->any())
             ->method('get')

@@ -16,7 +16,7 @@
  * along with DoctrineRestDriver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace Circle\DoctrineRestDriver\Annotations;
+namespace Circle\DoctrineRestDriver\Router;
 
 use Circle\DoctrineRestDriver\Types\HashMap;
 
@@ -26,7 +26,7 @@ use Circle\DoctrineRestDriver\Types\HashMap;
  * @author    Tobias Hauck <tobias@circle.ai>
  * @copyright 2015 TeeAge-Beatz UG
  */
-class RoutingTable {
+class RoutingTable implements RoutingTableInterface {
 
     /**
      * @var array
@@ -39,6 +39,7 @@ class RoutingTable {
      * @param array $entities
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
+     * @throws \Circle\DoctrineRestDriver\Validation\Exceptions\InvalidTypeException
      */
     public function __construct(array $entities) {
         HashMap::assert($entities, 'entities');

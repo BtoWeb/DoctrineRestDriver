@@ -30,14 +30,20 @@ class SelectAllResult {
     /**
      * Returns a valid Doctrine result for SELECT ... without WHERE id = <id>
      *
-     * @param  array  $tokens
-     * @param  array  $content
+     * @param  array $tokens
+     * @param  array $content
      * @return string
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
+     * @throws \Exception
      */
     public static function create(array $tokens, array $content) {
         $content = self::orderBy($tokens, $content);
+        $content = self::groupBy($tokens, $content);
+
+        if ( ! isset($content[0]) ) {
+            return SelectSingleResult::create($tokens, $content);
+        }
 
         return array_map(function($entry) use ($tokens) {
             $row = SelectSingleResult::create($tokens, $entry);
@@ -76,5 +82,61 @@ class SelectAllResult {
         call_user_func_array('array_multisort', $sortArgs);
 
         return end($sortArgs);
+    }
+
+    public static function groupBy(array $tokens, array $content)
+    {
+
+        if (!isset($tokens['SELECT'])) {
+            return $content;
+        }
+        $hasAgregateFunctions = false;
+
+        foreach ($tokens['SELECT'] as $column) {
+            if ($column['expr_type'] == 'aggregate_function') {
+                $hasAgregateFunctions = true;
+            }
+        }
+
+        // Aucune fonction d'agregation ? On retourne le résultat direct
+        if (!$hasAgregateFunctions) {
+            return $content;
+        }
+
+        $ret = [];
+
+        foreach ($tokens['SELECT'] as $column) {
+            switch ($column['expr_type']) {
+                case 'reserved':
+                    break;
+
+                case 'aggregate_function':
+                    $ret[$column['alias']['name']] = null;
+
+                    switch ($column['base_expr']) {
+                        case 'count':
+                            $ret[$column['alias']['name']] = array_reduce(
+                                $content,
+                                function ($count, $item) {
+                                    return ++$count;
+                                },
+                                0
+                            );
+                            break;
+
+                        default:
+                            // TODO : Correct me
+                            throw new \Exception("aggregate_function unknown : " . json_encode($column));
+                    }
+
+                    break;
+
+                default:
+                    // TODO : Correct me
+                    throw new \Exception("column type unkown : " . json_encode($column));
+            }
+        }
+
+        return $ret;
     }
 }

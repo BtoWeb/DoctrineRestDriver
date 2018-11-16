@@ -24,7 +24,7 @@ use Circle\DoctrineRestDriver\Annotations\Fetch;
 use Circle\DoctrineRestDriver\Annotations\Insert;
 use Circle\DoctrineRestDriver\Annotations\Update;
 use Circle\DoctrineRestDriver\Annotations\Routing;
-use Circle\DoctrineRestDriver\Annotations\RoutingTable;
+use Circle\DoctrineRestDriver\Router\RoutingTable;
 use Circle\DoctrineRestDriver\Types\Table;
 use PHPSQLParser\PHPSQLParser;
 

@@ -29,6 +29,9 @@ use Doctrine\DBAL\Exception as DBALException;
  * @author Rob Treacy <robert.treacy@thesalegroup.co.uk>
  */
 class ResponseExceptionFactoryTest extends \PHPUnit\Framework\TestCase {
+    /**
+     * @var ResponseExceptionFactory
+     */
     private $responseExceptionFactory;
     
     public function setUp() {
