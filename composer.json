@@ -50,7 +50,7 @@
     "php": ">=7.1",
     "doctrine/dbal": "^2.8.0",
     "greenlion/php-sql-parser": "^4.1.2",
-    "doctrine/orm": "^2.6.2",
+    "doctrine/orm": "^2.6.1",
     "ci/restclientbundle": "^2.0.2",
     "symfony/security-csrf": "^3.4||^4.1",
     "symfony/form": "^3.4||^4.1",
