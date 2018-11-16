@@ -52,9 +52,9 @@
     "greenlion/php-sql-parser": "^4.1.2",
     "doctrine/orm": "^2.6.2",
     "ci/restclientbundle": "^2.0.2",
-    "symfony/security-csrf": "^4.1",
-    "symfony/form": "^4.1",
-    "symfony/asset": "^4.1",
+    "symfony/security-csrf": "^3.4||^4.1",
+    "symfony/form": "^3.4||^4.1",
+    "symfony/asset": "^3.4||^4.1",
     "ext-pdo": "*",
     "ext-json": "*"
   }
