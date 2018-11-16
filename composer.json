@@ -16,7 +16,7 @@
     "REST API doctrine ORM DBAL driver"
   ],
   "license": [
-    "GPL"
+    "GPL-3.0-or-later"
   ],
   "require-dev": {
     "symfony/expression-language": "^4.0",
