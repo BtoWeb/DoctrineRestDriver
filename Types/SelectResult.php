@@ -18,6 +18,7 @@
 
 namespace Circle\DoctrineRestDriver\Types;
 
+
 /**
  * Maps the response content of a GET query to a valid
  * Doctrine result for SELECT ...
@@ -30,14 +31,30 @@ class SelectResult {
     /**
      * Returns a valid Doctrine result for SELECT ...
      *
-     * @param  array  $tokens
-     * @param  array  $content
-     * @return string
+     * @param  array $tokens
+     * @param  array $content
+     * @return mixed
      *
      * @SuppressWarnings("PHPMD.StaticAccess")
+     * @throws \Circle\DoctrineRestDriver\Validation\Exceptions\InvalidTypeException
+     * @throws \Exception
      */
     public static function create(array $tokens, $content) {
-        if (empty($content) || !is_array($content)) return [];
-        return empty($content[0]) ? SelectSingleResult::create($tokens, $content) : SelectAllResult::create($tokens, $content);
+        if (!is_array($content)) return [];
+
+        $hasAgregateFunctions = false;
+        foreach ($tokens['SELECT'] as $column) {
+            if ($column['expr_type'] == 'aggregate_function') {
+                $hasAgregateFunctions = true;
+            }
+        }
+
+        if ( $hasAgregateFunctions ) {
+            return SelectAggregatedResult::create($tokens, $content);
+        } elseif ( empty($content[0]) ) {
+            return  SelectSingleResult::create($tokens, $content);
+        } else {
+            return SelectAllResult::create($tokens, $content);
+        }
     }
 }
