@@ -39,25 +39,76 @@ class SelectSingleResult {
      * @SuppressWarnings("PHPMD.StaticAccess")
      * @throws \Circle\DoctrineRestDriver\Validation\Exceptions\InvalidTypeException
      */
-    public static function create(array $tokens, $content) {
+    public static function create(array $tokens, $content)
+    {
         HashMap::assert($tokens, 'tokens');
         $tableAlias = Table::alias($tokens);
 
-        $usableTokens = array_filter($tokens['SELECT'], function($token) {
-            return ($token['expr_type'] ?? 'reserved') !== 'reserved';
-        });
+        // TODO : Gérer les jointures (pour formulas.acts !)
+        $jointures = [];
 
-        $attributeValueMap = array_map(function($token) use ($content, $tableAlias) {
-            $key   = empty($token['alias']['name']) ? $token['base_expr'] : $token['alias']['name'];
+        // Traitement des jointures
+        if (isset($tokens['FROM'])) {
+            $contents = [];
 
-            if ( $token['expr_type'] === 'aggregate_function' ) {
-                $value = $content[$key];
-            } else {
-                $value = $content[str_replace($tableAlias . '.', '', $token['base_expr'])] ?? null;
+            foreach ($tokens['FROM'] as $table) {
+                $alias = $table['alias']['name'] ?? '';
+                $name = $table['table'].'s' ?? '';
+
+                // Détecte une jointure
+                if (isset($content[$name]) && is_array($content[$name])) {
+
+                    foreach ($content[$name] as $values) {
+                        $newLine = $content;
+
+                        foreach ($values as $key => $value) {
+                            $newLine[$alias.'.'.$key] = $value;
+                        }
+
+                        unset($newLine[$name]);
+                        $contents[] = $newLine;
+                    }
+
+                    unset($content[$name]);
+
+                }
             }
-            return [$key => $value];
-        }, $usableTokens);
 
-        return [ array_reduce($attributeValueMap, 'array_merge', []) ];
+            if ( count($contents) ) {
+                $ret = [];
+                foreach($contents as $c) {
+                    $ret[] = self::create($tokens, $c);
+                }
+
+                return $ret;
+            }
+        }
+
+        $usableTokens = array_filter(
+            $tokens['SELECT'],
+            function ($token) {
+                return ($token['expr_type'] ?? 'reserved') !== 'reserved';
+            }
+        );
+
+        $attributeValueMap = array_map(
+            function ($token) use ($content, $tableAlias) {
+                $key = empty($token['alias']['name']) ? $token['base_expr'] : $token['alias']['name'];
+
+                if ($token['expr_type'] === 'aggregate_function') {
+                    $value = $content[$key];
+                } else {
+                    $value = $content[$token['base_expr']] ?? $content[str_replace($tableAlias.'.', '', $token['base_expr'])] ?? null;
+                }
+
+                return [$key => $value];
+            },
+            $usableTokens
+        );
+
+        // Récupère toutes les entités
+        $ret = [array_reduce($attributeValueMap, 'array_merge', [])];
+
+        return $ret;
     }
 }

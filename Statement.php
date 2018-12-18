@@ -33,6 +33,7 @@ use Circle\DoctrineRestDriver\Types\SqlQuery;
 use Circle\DoctrineRestDriver\Validation\Assertions;
 use Doctrine\Common\Persistence\Mapping\ClassMetadataFactory;
 use Doctrine\DBAL\Driver\Statement as StatementInterface;
+use Doctrine\DBAL\ParameterType;
 use PHPSQLParser\PHPSQLParser;
 
 /**
@@ -144,7 +145,14 @@ class Statement implements \IteratorAggregate, StatementInterface
      */
     public function bindValue($param, $value, $type = null)
     {
-        $this->params[$param] = $value;
+        switch ($type) {
+            case ParameterType::BOOLEAN:
+                $this->params[$param] = boolval($value);
+                break;
+
+            default:
+                $this->params[$param] = $value;
+        }
 
         return true;
     }
