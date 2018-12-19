@@ -44,9 +44,6 @@ class SelectSingleResult {
         HashMap::assert($tokens, 'tokens');
         $tableAlias = Table::alias($tokens);
 
-        // TODO : Gérer les jointures (pour formulas.acts !)
-        $jointures = [];
-
         // Traitement des jointures
         if (isset($tokens['FROM'])) {
             $contents = [];
@@ -77,7 +74,7 @@ class SelectSingleResult {
             if ( count($contents) ) {
                 $ret = [];
                 foreach($contents as $c) {
-                    $ret[] = self::create($tokens, $c);
+                    $ret = array_merge($ret, self::create($tokens, $c));
                 }
 
                 return $ret;

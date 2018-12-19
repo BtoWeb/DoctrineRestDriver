@@ -21,7 +21,6 @@ namespace Circle\DoctrineRestDriver;
 use Circle\DoctrineRestDriver\Router\DefaultEntityRouter;
 use Circle\DoctrineRestDriver\Router\EntityRouterInterface;
 use Circle\DoctrineRestDriver\Router\RoutingTable;
-use Circle\DoctrineRestDriver\Router\RoutingTableInterface;
 use Doctrine\Common\Persistence\Mapping\ClassMetadataFactory;
 use Doctrine\DBAL\Driver as DriverInterface;
 use Doctrine\DBAL\Connection as AbstractConnection;
@@ -40,11 +39,6 @@ class Driver implements DriverInterface {
      * @var Connection
      */
     private $connection;
-
-    /**
-     * @var RoutingTableInterface
-     */
-    private $routings;
 
     /**
      * @var ClassMetadataFactory
